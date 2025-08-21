@@ -36,7 +36,7 @@ iwr -useb https://raw.githubusercontent.com/bergaaberg/berga/main/install/instal
 
 ### 🛠️ Build from Source
 
-**Prerequisites:** Go 1.25 or later
+**Prerequisites:** Go 1.21 or later
 
 ```bash
 # Clone the repository
