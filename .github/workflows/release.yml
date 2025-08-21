@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.25'
+
+    - name: Run tests
+      run: go test -v ./...
+
+    - name: Build for all platforms
+      run: |
+        # Create dist directory
+        mkdir -p dist
+        
+        # Set version from tag
+        VERSION=${GITHUB_REF#refs/tags/}
+        LDFLAGS="-s -w -X main.version=${VERSION}"
+        
+        # Windows
+        GOOS=windows GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/berga-windows-amd64.exe .
+        GOOS=windows GOARCH=386 go build -ldflags="${LDFLAGS}" -o dist/berga-windows-386.exe .
+        
+        # macOS
+        GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/berga-darwin-amd64 .
+        GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/berga-darwin-arm64 .
+        
+        # Linux
+        GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/berga-linux-amd64 .
+        GOOS=linux GOARCH=386 go build -ldflags="${LDFLAGS}" -o dist/berga-linux-386 .
+        GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/berga-linux-arm64 .
+
+    - name: Create checksums
+      run: |
+        cd dist
+        sha256sum * > checksums.txt
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          dist/berga-windows-amd64.exe
+          dist/berga-windows-386.exe
+          dist/berga-darwin-amd64
+          dist/berga-darwin-arm64
+          dist/berga-linux-amd64
+          dist/berga-linux-386
+          dist/berga-linux-arm64
+          dist/checksums.txt
+        generate_release_notes: true
+        draft: false
+        prerelease: false
